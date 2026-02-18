@@ -1,0 +1,35 @@
+/**
+ * globals.css — Minimal global resets only.
+ * No body background — each page controls its own background
+ * to prevent style leaking from the demo dashboard.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset defaults */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove default link underlines */
+a {
+  color: inherit;
+  text-decoration: none;
+}
