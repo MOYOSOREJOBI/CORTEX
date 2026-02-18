@@ -1,116 +1,141 @@
-# CORTEX — Intelligent On-Device Memory
+# CORTEX
 
-![Dashboard](docs/screenshot.png)
+Intelligent on device memory. Private by design.
 
-## What is CORTEX?
+## What Cortex Does
 
-CORTEX is an AI-powered on-device memory system that intelligently indexes, searches, and organizes your digital content — photos, PDFs, notes, and more — entirely on your device.
+Cortex is a personal memory system that runs entirely in your browser. It stores notes, ideas, and knowledge in a local IndexedDB database. Nothing leaves your device.
 
-Built as a full-stack portfolio project, CORTEX features a stunning glassmorphism web dashboard (deployed on Vercel) and a companion iOS app skeleton showcasing on-device ML/NLP capabilities with Swift actors, Core ML, Vision OCR, and SQLite FTS5.
+Features:
+- Local first storage with IndexedDB
+- Hybrid search with keyword and semantic matching
+- Reciprocal Rank Fusion for result ranking
+- AES GCM encryption for vault export and import
+- App lock with passphrase verification
+- Full keyboard navigation and accessibility
+- Zero telemetry, zero tracking, zero remote analytics
 
-Every piece of data stays on your device. No cloud sync. No telemetry. Privacy is the architecture, not a feature toggle.
-
-## Live Demo
-
-🌐 [View Live Dashboard](#) — *Deploy to Vercel to get your URL*
-
-## Tech Stack
-
-| Layer         | Web                          | iOS                           |
-|---------------|------------------------------|-------------------------------|
-| **UI**        | Next.js 14, React, Tailwind  | SwiftUI (iOS 17+)             |
-| **Language**  | TypeScript (strict)          | Swift 5.9                     |
-| **Styling**   | CSS Modules, Glassmorphism   | Native SwiftUI                |
-| **APIs**      | Next.js Route Handlers       | Swift Actors                  |
-| **Search**    | —                            | SQLite FTS5 + Vector Similarity |
-| **ML/NLP**    | —                            | Core ML, Vision, NaturalLanguage |
-| **Security**  | —                            | CryptoKit, Keychain           |
-| **Deploy**    | Vercel                       | Xcode / TestFlight            |
-| **CI**        | GitHub Actions               | XcodeGen                      |
-
-## Features
-
-- 🧠 **Smart Indexing** — Photos, PDFs, Notes automatically indexed on-device
-- 🔍 **Hybrid Search** — Semantic + keyword search powered by FTS5 and vector similarity
-- 🔒 **Privacy First** — All processing on-device, encrypted storage, zero telemetry
-- 🎨 **Glassmorphism UI** — Apple-inspired dashboard with 3D card tilt, radial hover effects
-- ⚡ **Performant** — < 50ms search latency, < 80MB memory footprint
-- 📱 **iOS Native** — Swift actors for safe concurrency, protocol-oriented architecture
-
-## Quick Start
+## Setup
 
 ```bash
-git clone https://github.com/yourusername/cortex.git
-cd cortex
+git clone https://github.com/MOYOSOREJOBI/CORTEX.git
+cd CORTEX
 pnpm install
-pnpm dev
-# Visit http://localhost:3000
 ```
+
+## Dev
+
+```bash
+pnpm dev
+```
+
+Open http://localhost:3000. The dashboard loads as the root route.
+
+## Test
+
+```bash
+pnpm test
+```
+
+Runs unit tests for search ranking, encryption, and app constants.
+
+## Lint
+
+```bash
+pnpm lint
+```
+
+## Build
+
+```bash
+pnpm build
+```
+
+Creates an optimized production build in `apps/web/.next`.
+
+## Deploy
+
+Set the root directory to `apps/web` in your hosting platform. Cortex works on Vercel, Netlify, or any Node.js host.
+
+```bash
+pnpm start
+```
+
+Starts the production server.
 
 ## Project Structure
 
 ```
-cortex/
-├── apps/
-│   ├── web/                    # Next.js 14 App Router (Vercel deploy target)
-│   │   ├── src/
-│   │   │   ├── app/            # Pages and API routes
-│   │   │   ├── components/     # React components (DemoDashboard, Navbar, etc.)
-│   │   │   ├── hooks/          # Custom React hooks
-│   │   │   └── lib/            # Types and constants
-│   │   └── public/             # Static assets
-│   │
-│   └── ios/                    # iOS app skeleton (not part of web build)
-│       └── Cortex/
-│           ├── App/            # App entry point
-│           ├── Views/          # SwiftUI views
-│           ├── Models/         # Data models
-│           ├── Services/       # Swift actor services
-│           └── Storage/        # Database manager
-│
-├── docs/                       # Architecture, privacy, and performance docs
-├── scripts/                    # Setup scripts
-├── .github/workflows/          # CI pipeline
-├── DEPLOYMENT.md               # Vercel deployment guide
-└── README.md
+CORTEX/
+  apps/
+    web/
+      src/
+        app/              Page routes and API routes
+        components/       DemoDashboard, tabs, error boundary, toasts, lock screen
+        hooks/            Custom React hooks
+        lib/              Types, constants, db, crypto, search engine, context
+        __tests__/        Unit tests
+      public/             Static assets (avatar image, logo)
+  docs/                   Architecture and privacy docs
+  .github/workflows/      CI pipeline (lint, test, build)
 ```
 
-## Pages
+## Data Model
 
-| Route           | Description                              |
-|-----------------|------------------------------------------|
-| `/`             | Premium landing page with animated hero  |
-| `/demo`         | Glassmorphism dashboard (interactive)    |
-| `/architecture` | System architecture overview             |
-| `/privacy`      | Privacy-first design philosophy          |
-| `/benchmarks`   | Performance metrics and benchmarks       |
-| `/build`        | Tech stack and build information         |
+Cortex uses an IndexedDB database named `cortex` with these stores:
 
-## Deployment
+| Store            | Key     | Description                        |
+|------------------|---------|------------------------------------|
+| memories         | id      | User created memories              |
+| searchHistory    | id      | Search query log                   |
+| indexRuns        | id      | Index pipeline run records         |
+| analyticsEvents  | id      | Local analytics events             |
+| settings         | id      | App settings and lock config       |
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step Vercel deployment instructions.
+### Memory Record Fields
 
-**Quick deploy:** Set Root Directory to `apps/web` in Vercel, and deploy. That's it.
+| Field       | Type     | Description                       |
+|-------------|----------|-----------------------------------|
+| id          | string   | Unique identifier                 |
+| title       | string   | Memory title                      |
+| body        | string   | Memory body text                  |
+| tags        | string[] | User tags                         |
+| source      | string   | manual, import, or capture        |
+| createdAt   | number   | Creation timestamp                |
+| updatedAt   | number   | Last update timestamp             |
+| pinned      | boolean  | Pinned to top                     |
+| sensitivity | string   | normal, sensitive, or restricted  |
 
-## iOS Development
+## Keyboard Shortcuts
 
-The iOS app requires Xcode 15+ and XcodeGen:
+| Key     | Action       |
+|---------|------------- |
+| Ctrl+1  | Dashboard    |
+| Ctrl+2  | Search       |
+| Ctrl+3  | Memories     |
+| Ctrl+4  | Processing   |
+| Ctrl+5  | Privacy      |
+| Ctrl+6  | Analytics    |
+| Ctrl+7  | About        |
+| Tab     | Move focus   |
+| Enter   | Activate     |
+| Arrows  | Navigate sidebar |
 
-```bash
-brew install xcodegen
-cd apps/ios
-xcodegen generate
-open Cortex.xcodeproj
-```
+## Tech Stack
 
-See [apps/ios/README.md](apps/ios/README.md) for details.
+- Next.js 14 with App Router
+- React 18
+- TypeScript (strict mode)
+- Tailwind CSS with CSS Modules
+- IndexedDB for persistence
+- Web Crypto API for encryption
+- Vitest for testing
+- pnpm workspaces
 
 ## Author
 
-**Moyosore Jobi**
-
-- Portfolio: [moyosore.dev](https://moyosore.dev)
+Moyosore Jobi
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT

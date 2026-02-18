@@ -1,59 +1,99 @@
-/**
- * DemoDashboard — The glassmorphism dashboard centerpiece.
- * Converted from an Apple-style sidebar HTML/CSS/JS template.
- *
- * Interactive behaviors:
- * 1. Sidebar active state with icon pop animation
- * 2. Radial gradient hover highlight on menu items
- * 3. 3D tilt effect on stat cards following mouse position
- *
- * All styles are scoped via CSS Module (DemoDashboard.module.css).
- */
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import styles from './DemoDashboard.module.css';
-import { useDashboardData } from '@/hooks/useDashboardData';
-import { MENU_ITEMS, STAT_CARDS } from '@/lib/constants';
-import MadeByBadge from './MadeByBadge';
+import { useApp } from '@/lib/context';
+import { MENU_ITEMS } from '@/lib/constants';
+import LockScreen from './LockScreen';
+import ToastContainer from './ToastContainer';
+import DashboardTab from './tabs/DashboardTab';
+import SearchTab from './tabs/SearchTab';
+import MemoriesTab from './tabs/MemoriesTab';
+import ProcessingTab from './tabs/ProcessingTab';
+import PrivacyTab from './tabs/PrivacyTab';
+import AnalyticsTab from './tabs/AnalyticsTab';
+import AboutTab from './tabs/AboutTab';
+
+function getRouteFromHash(): string {
+  if (typeof window === 'undefined') return 'dashboard';
+  const hash = window.location.hash.replace('#', '');
+  const valid = MENU_ITEMS.map((i) => i.route);
+  return valid.includes(hash) ? hash : 'dashboard';
+}
+
+function getIndexFromRoute(route: string): number {
+  const idx = MENU_ITEMS.findIndex((i) => i.route === route);
+  return idx >= 0 ? idx : 0;
+}
 
 export default function DemoDashboard() {
-  const { stats, user } = useDashboardData();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const { locked, ready, settings } = useApp();
+  const [activeRoute, setActiveRoute] = useState(getRouteFromHash);
   const [poppedIndex, setPoppedIndex] = useState<number | null>(null);
   const menuItemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
-  /**
-   * Handle sidebar item click:
-   * - Set active state
-   * - Trigger icon pop animation (scale up then reset)
-   */
-  const handleMenuClick = useCallback((index: number) => {
-    setActiveIndex(index);
-    setPoppedIndex(index);
+  const activeIndex = getIndexFromRoute(activeRoute);
+
+  // Sync hash with active route
+  useEffect(() => {
+    const handleHashChange = () => {
+      setActiveRoute(getRouteFromHash());
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    if (!window.location.hash) {
+      window.location.hash = 'dashboard';
+    }
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const navigateTo = useCallback((route: string) => {
+    setActiveRoute(route);
+    window.location.hash = route;
+    const idx = getIndexFromRoute(route);
+    setPoppedIndex(idx);
     setTimeout(() => setPoppedIndex(null), 200);
   }, []);
 
-  /**
-   * Handle keyboard activation (Enter/Space) for accessibility
-   */
+  // Keyboard shortcuts (Ctrl+1 through Ctrl+7)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key >= '1' && e.key <= '7') {
+        e.preventDefault();
+        const idx = parseInt(e.key) - 1;
+        if (idx < MENU_ITEMS.length) {
+          navigateTo(MENU_ITEMS[idx].route);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigateTo]);
+
+  const handleMenuClick = useCallback((index: number) => {
+    navigateTo(MENU_ITEMS[index].route);
+  }, [navigateTo]);
+
   const handleMenuKeyDown = useCallback(
     (e: React.KeyboardEvent, index: number) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         handleMenuClick(index);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = (index + 1) % MENU_ITEMS.length;
+        menuItemRefs.current[next]?.querySelector('button')?.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = (index - 1 + MENU_ITEMS.length) % MENU_ITEMS.length;
+        menuItemRefs.current[prev]?.querySelector('button')?.focus();
       }
     },
     [handleMenuClick]
   );
 
-  /**
-   * Hover highlight effect:
-   * Creates a radial gradient div at mouse position,
-   * fades it out, then removes it.
-   */
   const handleMenuMouseEnter = useCallback(
     (e: React.MouseEvent<HTMLLIElement>, index: number) => {
+      if (settings.reduceMotion) return;
       const item = menuItemRefs.current[index];
       if (!item) return;
 
@@ -66,83 +106,66 @@ export default function DemoDashboard() {
       highlight.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.3), transparent 50%)`;
       item.appendChild(highlight);
 
-      // Fade out after 500ms
       setTimeout(() => {
         highlight.classList.add(styles.hoverHighlightFading);
       }, 500);
 
-      // Remove from DOM after fade completes
       setTimeout(() => {
         if (highlight.parentNode) {
           highlight.parentNode.removeChild(highlight);
         }
       }, 800);
     },
-    []
+    [settings.reduceMotion]
   );
 
-  /**
-   * Card 3D tilt effect:
-   * Calculates rotation angles based on mouse position relative to card center.
-   * Applies perspective transform for a natural tilt feel.
-   */
-  const handleCardMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const card = e.currentTarget;
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      const tiltX = ((x - centerX) / centerX) * 10;
-      const tiltY = ((y - centerY) / centerY) * -10;
-      card.style.transform = `perspective(1000px) rotateX(${tiltY}deg) rotateY(${tiltX}deg) scale(1.05)`;
-    },
-    []
-  );
+  if (!ready) {
+    return (
+      <div className={styles.demoBody}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100vh',
+          fontSize: 16,
+          opacity: 0.6,
+        }}>
+          Loading Cortex...
+        </div>
+      </div>
+    );
+  }
 
-  /**
-   * Reset card transform on mouse leave with smooth transition.
-   */
-  const handleCardMouseLeave = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const card = e.currentTarget;
-      card.style.transition = 'transform 0.5s ease';
-      card.style.transform = 'none';
-      setTimeout(() => {
-        card.style.transition = '';
-      }, 500);
-    },
-    []
-  );
+  if (locked) {
+    return <LockScreen />;
+  }
 
-  /**
-   * Format stat value for display.
-   * Numbers get comma formatting, strings (like "98%") pass through.
-   */
-  const formatStat = (key: string, defaultValue: string): string => {
-    if (!stats) return defaultValue;
-    const val = stats[key as keyof typeof stats];
-    if (typeof val === 'number') {
-      return val.toLocaleString();
+  const renderTab = () => {
+    switch (activeRoute) {
+      case 'dashboard': return <DashboardTab onNavigate={navigateTo} />;
+      case 'search': return <SearchTab />;
+      case 'memories': return <MemoriesTab />;
+      case 'processing': return <ProcessingTab />;
+      case 'privacy': return <PrivacyTab />;
+      case 'analytics': return <AnalyticsTab />;
+      case 'about': return <AboutTab />;
+      default: return <DashboardTab onNavigate={navigateTo} />;
     }
-    return String(val);
   };
 
   return (
     <div className={styles.demoBody}>
       <div className={styles.container}>
-        {/* ===== SIDEBAR ===== */}
-        <aside className={styles.sidebar}>
-          {/* Brain logo */}
+        {/* Sidebar */}
+        <aside className={styles.sidebar} role="navigation" aria-label="Main navigation">
           <div className={styles.logo}>
-            <i className="fas fa-brain" />
+            <i className="fas fa-brain" aria-hidden="true" />
             <div className={styles.logoText}>CORTEX</div>
           </div>
 
-          {/* Navigation menu */}
           <nav className={styles.menu}>
-            <ul>
+            <ul role="list">
               {MENU_ITEMS.map((item, index) => (
                 <li
                   key={item.label}
@@ -161,10 +184,11 @@ export default function DemoDashboard() {
                     onClick={() => handleMenuClick(index)}
                     onKeyDown={(e) => handleMenuKeyDown(e, index)}
                     tabIndex={0}
-                    aria-label={item.label}
-                    title={item.description}
+                    aria-label={`${item.label} (${item.shortcut})`}
+                    aria-current={activeIndex === index ? 'page' : undefined}
+                    title={`${item.description} (${item.shortcut})`}
                   >
-                    <i className={item.icon} />
+                    <i className={item.icon} aria-hidden="true" />
                     <span className={styles.menuLabel}>{item.label}</span>
                   </button>
                 </li>
@@ -172,49 +196,26 @@ export default function DemoDashboard() {
             </ul>
           </nav>
 
-          {/* User profile */}
+          {/* Profile */}
           <div className={styles.profile}>
             <div className={styles.avatar}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={user.avatarUrl} alt={user.name} />
+              <img src="/profile-avatar.jpg" alt="Profile photo" />
             </div>
             <div className={styles.userInfo}>
-              <h3>{user.name}</h3>
-              <p>{user.role}</p>
+              <h3>Moyosore Jobi</h3>
+              <p>Software Engineer</p>
             </div>
           </div>
         </aside>
 
-        {/* ===== MAIN CONTENT ===== */}
-        <main className={styles.content}>
-          <header className={styles.header}>
-            <h1>Welcome to Cortex</h1>
-            <p>Your intelligent on-device memory — here&apos;s today&apos;s overview</p>
-          </header>
-
-          {/* Stat cards */}
-          <div className={styles.cardContainer}>
-            {STAT_CARDS.map((card) => (
-              <div
-                key={card.key}
-                className={styles.card}
-                onMouseMove={handleCardMouseMove}
-                onMouseLeave={handleCardMouseLeave}
-              >
-                <div className={styles.cardIcon}>
-                  <i className={card.icon} />
-                </div>
-                <div className={styles.cardInfo}>
-                  <h3>{formatStat(card.key, card.defaultValue)}</h3>
-                  <p>{card.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Main content */}
+        <main className={styles.content} role="main">
+          {renderTab()}
         </main>
       </div>
 
-      <MadeByBadge />
+      <ToastContainer />
     </div>
   );
 }

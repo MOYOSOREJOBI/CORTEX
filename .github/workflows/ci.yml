@@ -1,7 +1,3 @@
-# CI workflow for CORTEX web app.
-# Runs lint and build on push to main and pull requests.
-# iOS app is NOT built — no Xcode tooling required.
-
 name: CI
 
 on:
@@ -33,6 +29,9 @@ jobs:
 
       - name: Lint
         run: pnpm lint
+
+      - name: Test
+        run: pnpm test
 
       - name: Build
         run: pnpm build
