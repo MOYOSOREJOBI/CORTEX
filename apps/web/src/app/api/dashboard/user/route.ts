@@ -10,8 +10,7 @@ export async function GET() {
   const user: UserProfile = {
     name: 'Moyosore Jobi',
     role: 'Software Engineer',
-    avatarUrl:
-      'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+    avatarUrl: '/profile-avatar.jpg',
   };
 
   return NextResponse.json(user);

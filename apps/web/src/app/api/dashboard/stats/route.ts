@@ -10,7 +10,7 @@ export async function GET() {
   const stats: DashboardStats = {
     memoriesIndexed: 2847,
     searchQueries: 156,
-    privacyScore: '98%',
+    privacyScore: 98,
   };
 
   return NextResponse.json(stats);
