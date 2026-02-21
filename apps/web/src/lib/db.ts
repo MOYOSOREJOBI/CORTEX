@@ -4,7 +4,7 @@
  */
 
 import { DB_NAME, DB_VERSION, STORES, DEFAULT_SETTINGS } from './constants';
-import type { Memory, SearchHistoryEntry, IndexRun, AnalyticsEvent, AppSettings } from './types';
+import type { Memory, SearchHistoryEntry, IndexRun, AnalyticsEvent, AppSettings, ActivityEntry } from './types';
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -42,6 +42,11 @@ function openDB(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(STORES.settings)) {
         db.createObjectStore(STORES.settings, { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains(STORES.activity)) {
+        const actStore = db.createObjectStore(STORES.activity, { keyPath: 'id' });
+        actStore.createIndex('timestamp', 'timestamp');
       }
     };
 
@@ -197,6 +202,27 @@ export async function clearAnalyticsEvents(): Promise<void> {
   await complete;
 }
 
+// Activity
+
+export async function addActivityEntry(entry: ActivityEntry): Promise<void> {
+  const { store, complete } = await tx(STORES.activity, 'readwrite');
+  store.put(entry);
+  await complete;
+}
+
+export async function getActivityEntries(): Promise<ActivityEntry[]> {
+  const { store, complete } = await tx(STORES.activity, 'readonly');
+  const result = await requestToPromise(store.getAll());
+  await complete;
+  return result.sort((a: ActivityEntry, b: ActivityEntry) => b.timestamp - a.timestamp).slice(0, 50);
+}
+
+export async function clearActivity(): Promise<void> {
+  const { store, complete } = await tx(STORES.activity, 'readwrite');
+  store.clear();
+  await complete;
+}
+
 // Settings
 
 export async function getSettings(): Promise<AppSettings> {
@@ -222,6 +248,7 @@ export async function wipeAllData(): Promise<void> {
     STORES.indexRuns,
     STORES.analyticsEvents,
     STORES.settings,
+    STORES.activity,
   ];
   const transaction = db.transaction(storeNames, 'readwrite');
   for (const name of storeNames) {

@@ -1,23 +1,46 @@
 'use client';
 
 /**
- * Legacy hook. Dashboard now uses AppContext directly.
- * Kept for backward compatibility.
+ * Dashboard data hook for CORTEX.
+ * Returns computed dashboard metrics from the app context.
  */
 
-import { DEFAULT_USER } from '@/lib/constants';
-import type { DashboardStats, UserProfile } from '@/lib/types';
+import { useApp } from '@/lib/context';
+import * as db from '@/lib/db';
+import { useEffect, useState } from 'react';
 
 interface DashboardData {
-  stats: DashboardStats | null;
-  user: UserProfile;
+  memoriesCount: number;
+  searchCount: number;
+  privacyScore: number;
   loading: boolean;
 }
 
 export function useDashboardData(): DashboardData {
+  const { memories, settings } = useApp();
+  const [searchCount, setSearchCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    db.countSearchHistory()
+      .then(setSearchCount)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const privacyScore = (() => {
+    let score = 50;
+    if (settings.appLockEnabled) score += 20;
+    if (settings.noRemoteAssets) score += 15;
+    if (!settings.localAnalytics) score += 10;
+    if (settings.reduceMotion) score += 5;
+    return Math.min(score, 100);
+  })();
+
   return {
-    stats: null,
-    user: DEFAULT_USER,
-    loading: false,
+    memoriesCount: memories.length,
+    searchCount,
+    privacyScore,
+    loading,
   };
 }

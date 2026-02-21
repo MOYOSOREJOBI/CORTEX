@@ -61,9 +61,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!health.ok) {
           console.error('Storage health check failed:', health.error);
         }
-        const [mems, sett] = await Promise.all([db.getAllMemories(), db.getSettings()]);
+        const [mems, sett, acts] = await Promise.all([
+          db.getAllMemories(),
+          db.getSettings(),
+          db.getActivityEntries(),
+        ]);
         setMemories(mems);
         setSettings(sett);
+        activityRef.current = acts;
+        setRecentActivity(acts);
         if (sett.appLockEnabled && sett.appLockVerifier) {
           setLocked(true);
         }
@@ -124,6 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     activityRef.current = [entry, ...activityRef.current].slice(0, 50);
     setRecentActivity([...activityRef.current]);
+    db.addActivityEntry(entry).catch(() => {});
   }, []);
 
   const trackEvent = useCallback(async (event: Omit<AnalyticsEvent, 'id' | 'timestamp'>) => {

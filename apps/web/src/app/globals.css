@@ -1,12 +1,12 @@
 /**
- * globals.css
+ * globals.css — CORTEX
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Reset defaults */
+/* Reset */
 *,
 *::before,
 *::after {
@@ -24,15 +24,15 @@ html {
 body {
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
-/* Remove default link underlines */
 a {
   color: inherit;
   text-decoration: none;
 }
 
-/* Focus rings for keyboard navigation */
+/* Focus rings */
 *:focus-visible {
   outline: 2px solid #0066ff;
   outline-offset: 2px;
@@ -41,6 +41,12 @@ a {
 button:focus-visible {
   outline: 2px solid #0066ff;
   outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: rgba(0, 102, 255, 0.4);
+  color: #fff;
 }
 
 /* Reduced motion */
@@ -54,8 +60,19 @@ button:focus-visible {
   }
 }
 
-/* Select styling for dark theme */
+/* Select options for dark theme */
 select option {
   background: #1a1a4e;
   color: #fff;
+}
+
+/* Placeholder styling */
+::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Scrollbar styling for non-webkit */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }

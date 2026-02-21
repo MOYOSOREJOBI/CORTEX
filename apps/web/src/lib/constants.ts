@@ -33,7 +33,7 @@ export const DEFAULT_USER: UserProfile = {
 export const DB_NAME = 'cortex';
 
 /** IndexedDB schema version */
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 /** Store names */
 export const STORES = {
@@ -42,6 +42,7 @@ export const STORES = {
   indexRuns: 'indexRuns',
   analyticsEvents: 'analyticsEvents',
   settings: 'settings',
+  activity: 'activity',
 } as const;
 
 /** Default settings */
