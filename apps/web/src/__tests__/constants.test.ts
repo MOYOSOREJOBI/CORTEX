@@ -35,11 +35,12 @@ describe('constants', () => {
 
   it('database constants are set', () => {
     expect(DB_NAME).toBe('cortex');
-    expect(DB_VERSION).toBe(1);
+    expect(DB_VERSION).toBe(2);
     expect(STORES.memories).toBe('memories');
     expect(STORES.searchHistory).toBe('searchHistory');
     expect(STORES.indexRuns).toBe('indexRuns');
     expect(STORES.analyticsEvents).toBe('analyticsEvents');
     expect(STORES.settings).toBe('settings');
+    expect(STORES.activity).toBe('activity');
   });
 });
